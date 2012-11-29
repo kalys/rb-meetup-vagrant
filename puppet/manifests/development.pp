@@ -23,9 +23,26 @@ class requirements {
   }
 
   package {
-    ["mysql-client", "mysql-server", "libmysqlclient-dev"]: 
+    ["mysql-client", "nodejs", "libmysqlclient-dev"]: 
       ensure => installed, require => Exec['apt-update']
   }
+}
+
+class installmysql {
+  class { 'mysql::server':
+    config_hash => { 'root_password' => 'foo' }
+  }
+
+  mysql::db { 'mydb':
+    user     => 'myuser',
+    password => 'mypass',
+    host     => 'localhost',
+    grant    => ['all'],
+  }
+}
+
+class installnginx {
+  class { 'nginx': }
 }
 
 class installrvm {
@@ -34,12 +51,20 @@ class installrvm {
 
   rvm_system_ruby {
     'ruby-1.9.3-p327':
-      ensure      => 'present'
+    ensure      => 'present'
+  }
+
+  rvm_gemset {
+    "ruby-1.9.3-p327@test_app":
+    ensure => present,
+    require => Rvm_system_ruby['ruby-1.9.3-p327'];
   }
 }
 
 class doinstall {
   class { requirements:, stage => "req-install" }
+  include installnginx
+  include installmysql
   include installrvm
 }
 
